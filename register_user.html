@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8"/>
+
+<link href="/css/register_user.css" th:href="@{/css/register_user.css}" rel="stylesheet"/>
+<link rel="stylesheet" th:href="@{/css/common.css}" href="/css/common.css" />
+
+<title>新規ユーザー登録 | SUMOKAN</title>
+</head>
+<body>
+
+<header th:insert="fragments/page_header.html :: pageHeader"></header>
+
+<div class="container">
+        <main>
+           
+                <div class="form_contents">
+                    <div class="password">新規ユーザー登録</div>
+                    <div class="table">
+                        <table id="register" class="user" border="1" cellspacing="0">
+                     <tr>
+                         <th bgcolor="#c0c0c0">  氏名</th>
+                         <td>
+                         	<input type="text" name="familyName"  placeholder="山田" maxlength="16" >
+                         	<input type="text" name="firstName"  placeholder="太郎" maxlength="16">
+                         </td>
+                     <tr>
+                          <th bgcolor="#c0c0c0" >氏名ふりがな</th> 
+                          <td>
+                          	<input type="text"  name="familyNameKana"  placeholder="やまだ" maxlength="16">
+                          	<input type="text"  name="firstNameKana"  placeholder="たろう" maxlength="16">
+                          </td>
+                     </tr>
+                     <tr>
+                         <th bgcolor="#c0c0c0">性別</th>
+                           <td>
+                           	<label><input type="radio" name="gender" value="男性" checked>男性</label>
+                            <label><input type="radio" name="gender" value="女性">女性</label>
+                           </td>   
+                     </tr>
+                        
+                     <tr>
+                         <th bgcolor="#c0c0c0" >ユーザー名<br />
+                         	<span class="note">(メールアドレス)</span></th>
+                         	<td>
+                         		<input type="text" name="userName"  placeholder="メールアドレス" maxlength="32"> 
+                         		<button  id="checkUserName" type="submit" class="button">重複確認</button>
+                         		<span id="checkOK" class="hidden">OK</span>
+                           </td>
+                     </tr>
+                        
+                     <tr>
+                         <th bgcolor="#c0c0c0">パスワード<br />
+                         <span class="note">(半角英数6~16文字)</span>
+                         </th>
+                         <td>
+                         	<input type="password" name="password"  placeholder="パスワード" maxlength="16">
+                         </td>
+                     </tr>
+                     <tr>
+			         </tr>
+			             </table>
+			       </div>
+			             
+                <span class="info hidden">登録が完了しました。</span>
+                   <div class="btn">
+                     <button id ="confirm"  type="submit" class="button" disabled>確認</button>
+                   </div>
+                </div>
+            
+  <!-- Modal Dialog (ユーザー名重複) -->
+  <div th:insert="fragments/dialog_duplicated_user_name::dialogDuplicatedUserName"></div>
+  
+  <!-- Modal Dialog (ユーザー入力エラー) -->
+  <div th:insert="fragments/dialog_input_user_error::dialogInputUserError"></div>
+  
+  <!-- Modal Dialog (入力内容確認) -->
+  <div th:insert="fragments/dialog_input_user_confirm::dialogInputUserConfirm"></div>
+            
+   </main>
+   </div>
+   <script>
+// dialog_input_user_error.htmlのエラーメッセージを表示するdivのクラスを定義
+const errorSelector = {
+  '姓': '.familyNameError',
+  '名': '.firstNameError',
+  '姓ふりがな': '.familyNameKanaError',
+  '名ふりがな': '.firstNameKanaError',
+  'ユーザー名': '.userNameError',
+  'パスワード': '.passwordError',
+};
+
+$(() => {
+  
+  // jQuery-UIダイアログの初期設定
+  $('#duplicatedUserName').dialog(dialogConfig.duplicatedUserName);
+  $('#inputUserError').dialog(dialogConfig.inputUserError);
+  $('#inputUserConfirm').dialog(dialogConfig.inputUserConfirm);
+  
+  $('button#checkUserName').on('click', () => {
+  	let userName = $('table#register input[name=userName]');
+  	if (isEmpty($(userName).val())) return;
+  	checkUserName(userName);
+  });
+  
+  $('button#confirm').on('click', () => {
+	// 入力チェック処理(validate.js:validate(checkerConfig))を呼び出す
+	// 引数はvalidate.js:checkerからチェックしたい項目の変数の宣言を作成する
+    let errInfo = validate({
+      'familyName': checker.familyName,
+      'firstName': checker.firstName,
+      'familyNameKana': checker.familyNameKana,
+      'firstNameKana': checker.firstNameKana,
+      'gender': null,
+      'userName': checker.userName,
+      'password': checker.password,
+    });
+    if (errInfo.isError) {
+      // エラーがあればエラーダイアログを表示する(volidator.js:createErrorDialog(checkerConfig))
+      createErrorDialog(errInfo.errMsg);
+      $("#inputUserError").dialog("open");
+    } else {
+      // エラーがなければ、確認ダイアログを表示する(dialogConfig.js:createConfirmDialog(checkerConfig))
+      createConfirmDialog({
+        'familyName': checker.familyName,
+        'firstName': checker.firstName,
+        'familyNameKana': checker.familyNameKana,
+        'firstNameKana': checker.firstNameKana,
+        'gender': null,
+        'userName': checker.userName,
+        'password': checker.password,
+      });
+      $("#inputUserConfirm").dialog("open");
+    }
+  });
+});
+
+function checkUserName(userName) {
+	let errInfo = validate({ 'userName': checker.userName });
+	if (errInfo.isError) {
+    createErrorDialog(errInfo.errMsg);
+    $("#inputUserError").dialog("open");
+    return;
+  }
+	
+	$.ajax({
+    type: 'POST',
+    url: '/hope/user/duplicatedUserName',
+    data: userName,
+    scriptCharset: 'utf-8'
+  })
+  .then((result) => {
+    if (result) {  // 重複あり
+    	$('button#confirm').prop('disabled', true);
+    	$("#duplicatedUserName").dialog("open");
+    	//$('button#checkUserName').prop('class', '');
+    	$('span#checkOK').prop('class', 'hidden');
+    } else {      // 重複なし
+    	$('button#confirm').prop('disabled', false);
+    	//$('button#checkUserName').prop('class', 'hidden');
+    	$('span#checkOK').prop('class', 'info');
+    }
+  }, () => {
+	  alert('Error: ajax connection failed.');
+  });
+}
+
+</script>
+   
+</body>
+</html>

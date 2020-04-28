@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<title>新規ユーザー登録 | SUMOKAN</title>
+</head>
+<body>
+
+<th:block th:fragment="dialogInputUserError">
+	<div id="inputUserError" title="ユーザー情報入力エラー" class="hidden">
+	  <div class="error familyNameError hidden" style="color:red"></div>
+	  <div class="error firstNameError hidden" style="color:red"></div>
+	  <div class="error familyNameKanaError hidden" style="color:red"></div>
+	  <div class="error firstNameKanaError hidden" style="color:red"></div>
+	  <div class="error userNameError hidden" style="color:red"></div>
+	  <div class="error passwordError hidden" style="color:red"></div>
+	</div>
+</th:block>
+
+
+</body>
+</html>
